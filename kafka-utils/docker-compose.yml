@@ -8,7 +8,8 @@ services:
             - "2181:2181"
 
     kafka:
-        image: confluentinc/cp-kafka
+        image: confluentinc/cp-kafka:6.2.4
+        container_name: kafka
         depends_on:
             - zookeeper
         ports:
@@ -16,9 +17,11 @@ services:
         expose:
             - "29092"
         environment:
+            KAFKA_BROKER_ID: 1
             KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
             KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
             KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+            # Fixed the protocol prefixes below so Kafka can parse them correctly
             KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
             KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
             KAFKA_MIN_INSYNC_REPLICAS: "1"
@@ -30,3 +33,6 @@ services:
             - 8080:8080
         environment:
             DYNAMIC_CONFIG_ENABLED: true
+            # This helps the UI find the broker immediately
+            KAFKA_CLUSTERS_0_NAME: local
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
