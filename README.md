@@ -1,5 +1,13 @@
 ﻿# scalable-chat-app
 
+## Setting up the Application
+`Note: While development, Linux System was used, hence there might be differences in setting up dependencies`.
+
+### Prerequisites
+1. Install Docker and Docker compose
+2. Install Valkey (open source alternative of redis)
+3. Install postgres
+
 ## Kafka and WebSocket Integration for Scalable Chat Application
 
 This document explains how Kafka can be integrated with WebSockets to build a scalable and efficient messaging system for a chat application. The focus is on the step-by-step process with relevant code snippets for better understanding.
@@ -230,6 +238,34 @@ Summary
     Client: Connects to the WebSocket server and listens for messages.
     Kafka: Acts as a backbone for durable, scalable message handling.
 
+### Actual workflow 
+This is the part where Socket.io server does the heavy lifting. We have two different "conversations" happening at the same time:
+
+    Conversation A (The Kafka Pull): Your backend asks Kafka for messages.
+
+    Conversation B (The Socket Emit): Your backend pushes those messages to the specific users' phones/browsers.
+
+How the backend handles 50 users at once
+
+Our backend server doesn't send the data to Kafka and then "wait" for it to come back before talking to the users. Instead, it acts like a relay station.
+
+Here is the exact step-by-step flow of how a message gets from User A to User B:
+
+    User A clicks "Send" on their phone.
+
+    Socket.io server receives the event message.
+
+    server (acting as a Producer) sends that message to Kafka.
+
+    Kafka writes it to a Partition and says "Got it!"
+
+    server (acting as a Consumer) is constantly "polling" (asking) Kafka: "Anything new?"
+
+    Kafka hands the message back to our Consumer code.
+
+    Inside our Consumer code, we call: io.to(data.room).emit("message", data);
+
+    Socket.io takes that message and pushes it out over the open internet connection to the 50 users who are currently sitting in that room.
 
 
 ### Advantages of This Integration
